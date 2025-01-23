@@ -1,0 +1,2329 @@
+<html>
+<head>
+
+    <style>
+        .recent {
+            line-height: 10px;
+            vertical-align: absmiddle;
+            padding-left: 2px;
+        }
+
+        ul {
+            margin: 0;
+        }
+
+        .row {
+            margin: 0
+        }
+
+        .col {
+            margin: 0
+        }
+		
+		.stageopacity { opacity: 0.5;}
+    </style>
+ <style type="text/css">
+        body { font-family: helvetica, arial, san-serif; background-color: #fff; text-align: left; font-size: 0.9em; margin: 10em }
+		
+		.innertbl {
+	border-collapse: collapse;		
+	border: 2px solid lightblue;
+	cellpadding: 5px;
+	width: 300px;
+	
+}
+	
+    </style>
+ 
+	
+	
+	
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+   <!-- <script src="https://omnipotent.net/jquery.sparkline/2.1.2/jquery.sparkline.min.js"></script> -->
+   <script src="jquery.sparkline.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+          integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <!--    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+            integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"
+            integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s"
+            crossorigin="anonymous"></script>
+<script> <!--this must be below the jquery to work -->
+//function getascvd(theurl){
+
+        $(document).ready(function () {
+            $("button").click(function () {
+                $.ajax({
+                    url: 'https://cors-anywhere.herokuapp.com/' + "www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1",
+                    url: 'https://cors-anywhere.herokuapp.com/' + theurl,
+					type: "GET",
+                    success: function (result) {
+                        const start = result.toString().indexOf("<h1>");
+                        const end = result.toString().indexOf("</h1>");
+                        const number = result.toString().substring(start, end + 6);
+						var thenumber = "<font color='red'>"+number+"</font>";
+                        $("#div1").html(thenumber);
+                    }
+                });
+            });
+        });
+		
+	/*	}//*/ 
+    </script>
+
+    <script type="text/javascript">
+
+        function subvals(thevals) {
+            var myvalues = thevals;
+            var myvalsarr = thevals.split(",");
+
+
+            return myvalsarr;
+            //$("#dynamicsparkline").sparkline(myvalsarr,{type: 'line'});
+        }
+
+        //from https://stackoverflow.com/questions/3582671/how-to-open-a-local-disk-file-with-javascript
+
+        function openFile() {
+            document.getElementById('inp').click();
+        }
+
+        function readFile(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+             //   document.getElementById('contents').innerHTML = e.target.result;
+                //alert(e.target.result);
+                thetext = e.target.result;
+				
+				//get just the part before the medications
+				//thetext = thetext.split("Current Outpatient Prescriptions:")[0];
+				//thetext = thetext.split("end of:")[0];
+				thetext = thetext.split("lab section")[1];
+				thetext = thetext.split("end of lab section")[0];
+				//alert('thetext='+thetext);
+				
+				//get smok section
+				genstr = e.target.result;
+				smokstr = genstr.split("smokhx")[1];
+				smokstr = smokstr.split("paksdaystr:")[1];
+				//smokuse = smokstr.split("smokuse:")[1];
+				smokstr = smokstr.split("\n")[0];
+				//smokuse = smokuse.split("\n")[0];
+				
+				//alert(smokstr);
+				smokstr = trimcomma(smokstr);
+				smokstr = ltrimcomma(smokstr);
+				 
+				smokusestr = genstr.split("smokuse:")[1];
+					smokusestr = smokusestr.split("\n")[0];
+					if (smokusestr.search("CURRENT SMOKER") > -1){ var issmoker = 1;}
+					if (smokusestr.search("NEVER SMOKER") > -1){ var issmoker = 0;}
+				//	alert('issmoker='+issmoker);
+					
+				alchxstr = genstr.split("drinkstr:")[1];
+				alchxstr = alchxstr.split("end of alchx")[0];
+				alchxstr = alchxstr.split("\n")[0];
+				alchxstr = trimcomma(alchxstr);
+				alchxstr = ltrimcomma(alchxstr);
+				
+				//meds
+				themeds = genstr.split("start of meds\n")[1];
+				themeds = themeds.split("end of meds")[0];
+				themedsarr = themeds.split("\n"); // alert('medsarrlength='+themedsarr.length);
+				for (j=0;j<themedsarr.length;j++){
+				var themed = themedsarr[j];
+				themed = themed.replace("TABLET","");
+				themed = themed.replace("xx","");
+		/*		 if (themed.search("METFORMIN") > -1) {
+                            document.getElementById("diabmeds").innerHTML = document.getElementById("diabmeds").innerHTML + "<br>" + themed; 
+							
+				}
+				
+				if (themed.search("INSULIN") > -1) {
+                            document.getElementById("diabmeds").innerHTML = document.getElementById("diabmeds").innerHTML + "\n" + themed; 
+					}
+		*/			
+				if (themed.search("STATIN") > -1) {
+                            document.getElementById("cholmeds").innerHTML = document.getElementById("cholmeds").innerHTML + "\n" + themed; 
+					}
+					
+					if (themed.search("ZEBETA") > -1) {
+                            document.getElementById("htnmeds").innerHTML = document.getElementById("htnmeds").innerHTML + "\n" + themed; 
+					}
+					
+					if (themed.search("OMEGA") > -1) {
+                            document.getElementById("livermeds").innerHTML = document.getElementById("livermeds").innerHTML + "\n" + themed; 
+					}
+					
+					if (themed.search("INOSITOL") > -1) {
+                            document.getElementById("livermeds").innerHTML = document.getElementById("livermeds").innerHTML + "\n" + themed; 
+					}
+					
+					//function srchdrug(){ alert('srchdrug');
+					//NB*** THE LISTS BELOW MUST BE IN CAPS TO BE MATCHED IN THE MATCHING SEARCH, OTHERWISE THEY WILL BE MISSED. THE DRUG NAMES IN THE ORIGINAL DATA ARE IN CAPS
+var thedruglist = "ACARBOSE,ALBIGLUTIDE,ALOGLIPTIN,BROMOCRIPTINE MESYLATE,CANAGLIFOZIN,DAPAGLIFLOZIN,DULAGLUTIDE,EMPAGLIFLOZIN,ERTUGLIFLOZIN,EXENATIDE,GLIMEPIRIDE,GLIPIZIDE,GLYBURIDE,INSULIN,LINAGLIPTIN,LIXISENATIDE,LIRAGLUTIDE,METFORMIN,MIGLIT,NATEGLINIDE,PIOGLITAZONE,PRAMLINTIDE,REPAGLINIDE,REPAGLINIDE,ROSIGLITAZONE,ROSIGLITAZONE,ROSIGLITAZONE,SAXAGLIPTIN,SEMAGLUTIDE,SITAGLIPTIN ";
+
+var htndruglist = "AMILORIDE,BUMETANIDE,CHLORTHALIDONE,CHLOROTHIAZIDE,FUROSEMIDE,HYDROCHLOROTHIAZIDE,INDAPAMIDE,METOLAZONE,MYKROX,SPIRONOLACTONE,TRIAMTERENE,ACEBUTOLOL,ATENOLOL,BETAXOLOL,BISOPROLOL,CARTEOLOL,METOPROLOL,NADOLOL,NEBIVOLOL,PENBUTOLOL,PINDOLOL,PROPRANOLOL,SOTALOL,TIMOLOL,DOXAZOSIN,PRAZOSIN,TERAZOSIN,BENAZEPRIL,CAPTOPRIL,ENALAPRIL,FOSINOPRIL,LISINOPRIL,MOEXIPRIL,PERINDOPRIL,QUINAPRIL,RAMIPRIL,TRANDOLAPRIL,CANDESARTAN,EPROSARTAN,IRBESARTAN,LOSARTAN,TELMISARTAN,VALSARTAN,ALISKIREN,AMLODIPINE,BEPRIDIL,DILTIAZEM,FELODIPINE,ISRADIPINE,NIFEDIPINE,NISOLDIPINE,VERAPAMIL,CLONIDINE,GUANABENZ,GUANFACINE,GUANADREL,GUANETHIDINE,RESERPINE,HYDRALAZINE";
+
+var choldruglist = "STATIN,NIACIN,CLOFIBRATE,FENOFIBRATE,GEMFIBROZIL,CHOLESTYRAMINE,COLESEVELAM HCL,COLESTIPOL,EZETIMIBE,ALIROCUMAB,EVOLOCUMAB,OMEGA-3";
+
+var liverdruglist = "URSODIOL,PIOGLITAZONE,ACTIGALL,ORLISTAT,AVANDIA,URSO,BETAINE,CYSTADANE,ROSIGLITAZONE,MINOXIDIL,METHYLDOPA";
+
+//ITERATE THROUGH DRUGSLIST TO FIND A MATCH
+var diabmeds = ""; var prevdiabmed = ""; //diabmedstr="";
+var htntxforascvd=0;
+
+druglistarr=thedruglist.split(",");
+for (d=0;d<druglistarr.length;d++){
+	thedrug = druglistarr[d];
+	if (themed.search(thedrug)>-1){
+	document.getElementById("diabmeds").innerHTML = document.getElementById("diabmeds").innerHTML + "_____________<br>" + themed ;//+ "\n"; //NB this line will give all the meds by reverse date order (i.e. the order in the file)
+
+		}
+
+	}
+	
+	//match htn drugs
+	druglistarr=htndruglist.split(",");
+for (d=0;d<druglistarr.length;d++){
+	thedrug = druglistarr[d];
+	if (themed.search(thedrug)>-1){
+	var htntx=1; //this can be used for the ascvd link 'htntreated=1'
+	 htntxforascvd=htntxforascvd+1; // alert('htntxforascvd='+htntxforascvd);
+	document.getElementById("htnmeds").innerHTML = document.getElementById("htnmeds").innerHTML + "_____________<br>" + themed ;//+ "\n"; //NB this line will give all the meds by reverse date order (i.e. the order in the file)
+
+		}
+
+	}
+
+		//match chol drugs
+		druglistarr=choldruglist.split(",");
+for (d=0;d<druglistarr.length;d++){
+	thedrug = druglistarr[d];
+	if (themed.search(thedrug)>-1){
+	document.getElementById("cholmeds").innerHTML = document.getElementById("cholmeds").innerHTML + "_____________<br>" + themed ;//+ "\n"; //NB this line will give all the meds by reverse date order (i.e. the order in the file)
+
+		}
+
+	}			
+			//match liver drugs		
+		druglistarr=liverdruglist.split(",");
+for (d=0;d<druglistarr.length;d++){
+	thedrug = druglistarr[d];
+	if (themed.search(thedrug)>-1){
+	document.getElementById("livermeds").innerHTML = document.getElementById("livermeds").innerHTML + "_____________<br>" + themed ;//+ "\n"; //NB this line will give all the meds by reverse date order (i.e. the order in the file)
+
+		}
+
+	}			
+					
+					
+				} //END OF MEDICATION LOOP
+				
+				//get vitals section
+				
+				vitalstr = genstr.split("start of vitals\n")[1];
+				vitalstr = vitalstr.split("end of vitals")[0];
+				vitalstr = vitalstr.split("\n")[0];
+				vitalstr = trimcomma(vitalstr);
+				vitalstr = ltrimcomma(vitalstr); // alert(vitalstr);
+				
+				//get individual vitals as strings for sparklines
+				//weight - note, this is in lb as per the data
+				weightstr = genstr.split("weightstr:")[1];
+				weightstr = weightstr.split("\n")[0]
+				weightstr = stripblanks(weightstr);
+				weightstr = trimcomma(weightstr);
+				weightstr = ltrimcomma(weightstr); // alert(weightstr);
+				
+				//bmi
+				bmistr = genstr.split("bmistr:")[1];
+				bmistr = bmistr.split("\n")[0];
+				bmistr = stripblanks(bmistr); // alert('bmistr='+bmistr);
+				bmistr = trimcomma(bmistr);
+				bmistr = ltrimcomma(bmistr); // alert('bmistr='+bmistr);
+				
+				
+				//systolic
+				systolicstr=genstr.split("systolicstr:")[1];
+				systolicstr = systolicstr.split("\n")[0];
+				systolicstr = trimcomma(systolicstr);
+				systolicstr = ltrimcomma(systolicstr); // alert(systolicstr);
+				
+				
+				
+				//diastolic
+				var diastolicstr = genstr.split("diastolicstr:")[1];
+				diastolicstr = diastolicstr.split("\n")[0];
+				diastolicstr = trimcomma(diastolicstr);
+				diastolicstr = ltrimcomma(diastolicstr); // alert('diastolic='+diastolicstr);
+				
+				
+				var sbparrlen=systolicstr.split(",").length; var endsbp=systolicstr.split(",")[sbparrlen-1];
+		// alert('endsbp='+endsbp);
+		var dbparrlen=diastolicstr.split(",").length; var enddbp=diastolicstr.split(",")[dbparrlen-1];
+		// alert('enddbp='+enddbp);
+				
+				
+				
+				
+				//pulse
+				pulsestr = genstr.split("pulsestr:")[1];
+				pulsestr = pulsestr.split("\n")[0];// alert('pulse='+pulsestr);
+				pulsestr = trimcomma(pulsestr);
+				pulsestr = ltrimcomma(pulsestr); // alert('pulse='+pulsestr);
+				
+				//demoGRAPHICS
+				birthdatestr = genstr.split("birthdate:")[1];
+				birthdatestr = birthdatestr.split("\n")[0];
+				// alert('birthdatestr='+birthdatestr);
+				age = getAge(birthdatestr);
+				document.getElementById("age").innerHTML=age;
+				
+				racestr = genstr.split("race:")[1];// alert('racestr.length='+racestr.length);
+				racestr = racestr.split("\n")[0]; // alert('racestr.length='+racestr.length);
+				//convert to raceforascvd 1 for African-American 0 for all others
+				raceforascvd = "";
+				if (racestr=="BLACK"){raceforascvd=1}
+				else {raceforascvd=0}
+				document.getElementById("race").innerHTML=racestr;
+			
+			 
+				genderstr = genstr.split("gender:")[1];
+				genderstr = genderstr.split("\n")[0]; // alert('genderstr='+genderstr);
+				//convert to gender for ascvd
+				genderforascvd="";
+				if (genderstr == "MALE"){genderforascvd=1} else {genderforascvd=0};
+				document.getElementById("gender").innerHTML=genderstr;
+			
+				
+				var diabforascvd=0;
+				//diagnoses
+				diagstr = genstr.split("Diagnoses2")[1];
+				diagstr = diagstr.split("end of diagnoses")[0];
+				diagstr = trimcomma(diagstr); diagstr=ltrimcomma(diagstr);
+				// alert('diagstr='+diagstr);
+				//extract ifg, diab, htn tx
+				diagstrarr=diagstr.split("\n");
+				var diab=0; var ifg=0; // alert('diagstrarr.length='+diagstrarr.length);
+				for (m=0; m<diagstrarr.length;m++){
+				thediag = diagstrarr[m];
+				//if (thediag.search("diab")>-1){diab = "yes";}
+				if (thediag.search("impaired glucose tolerance")>-1){ifg = 1;}
+				
+				if (thediag.search("glucose intolerance")>-1){ifg =1;}
+				if (thediag.search("impaired fasting glucose")>-1){ifg = 1;}
+				//}
+				if(thediag.search("E11.9")>-1){diab = "yes";}
+				if (thediag.search("Z79.4")>-1){diab = "yes";}
+				
+				}// alert('ifg='+ifg+ 'diab='+diab);
+			/**/	if (diab == "yes"){diabforascvd=1}
+                // alert('thetext=' + thetext);
+			////	document.getElementById("showdiv").innerHTML=thetext;
+                //thetextarr = thetext.split(",");
+                thetextarr = thetext.split("\n");
+
+                var AST = "";
+                var ALT = "";
+				var alb = "";
+                var Platelets = "";
+                var Glu = "";
+                var fastingGlu = "";
+                var A1c = "";
+                var sbp = "";
+                var dbp = "";
+                var ldl = "";
+				var vldl = ""; //very low density lipoprotein
+                var hdl = "";
+                var chol = "";
+                var tg = "";
+                var tgoverhdl = "";
+                var inr = "";
+                var totbili = "";
+                var cr = "";
+				var buncreat = "";
+				var randurinecreat = "";
+				var urinecreat = "";
+                var totstr = "";
+                var fullstr = "";
+                var worldstr = "";
+				var theel="";
+				var theage="";
+				var thesex="";
+				var therace="";
+				var diab="";
+				var smok="";
+				var highbptx="";
+				var Na = "";
+				var endsbp="";
+				var enddbp="";
+				var K = "";
+				var BUN = "";
+               // alert('arraylength=' + thetextarr.length);
+            
+
+
+////use lab section instead of textarr	for (i = 0; i < thetextarr.length; i++) {
+//// use lab section instead of textarr           myvals = thetextarr[i]; //alert(myvals);
+					
+						for (i = 0; i < thetextarr.length; i++) {
+//// use lab section instead of textarr          
+						myvals = thetextarr[i];
+
+                    //it doesn't handle blank lines, so chk if blank line
+                    if (myvals !== "") {
+
+                        var thelabname = myvals.split(":")[0];
+                        fullstr = fullstr + thelabname;//alert(fullstr);
+                        var thelabval = myvals.split(":")[1];
+                        //var thelabval = thelabval.replace("\r","");
+                        //alert(thelabname);
+                        //list the strings to search for
+                        //var srchstrs="Creatinine:cr,Glucose:Glu,Alanine Aminotrans:ALT,Aspartate Aminot:AST,Triglyceride:tg,Cholesterol:chol,Low Density Lipoprotein:ldl,High Density Lipoprotein:hdl,Total Bilirubin:totbili,Platelets:Platelets,HEMOGLOBIN A1C:A1c";
+                        //alert('hehe');
+////	srchstrarr=srchstrs.split(",");
+                        //alert('hoho');
+                        //for (j=0;j<srchstrarr.length;j++){
+
+                        //var thestr=srchstrarr[j];
+                        //var thesrchstr=thestr.split(":")[0]; var thelistabbrev=thestr.split(":")[1];
+                        //alert(thesrchstr); alert(thelistabbrev);
+                        //alert('search='+thelabname.search(thesrchstr));
+                        //if (thelabname.search(thesrchstr)>-1){
+//	thelistabbrev=thelistabbrev+thelabval+",";
+                        //get abbrev and add the labval to the list
+                        //switch(thelistabbrev){
+						if (thelabname.search("ALBUMIN") > -1) {
+                            alb = alb + thelabval + ",";
+                        }
+
+                        if (thelabname.search("CREATININE") > -1) { //this needs to be parsed further as there are 3 different creatinine tests
+							if (thelabname.search("BUN")>-1){buncreat=buncreat + thelabval + ",";}
+                            else if (thelabname.search("RANDOM URINE CREATININE")>-1){randurinecreat=randurinecreat + thelabval + ",";}
+							else if (thelabname.search("URINE CREATININE")>-1){urinecreat=urinecreat + thelabval + ",";}
+							else {
+							cr = cr + thelabval + ",";
+							}
+                        }
+                        if (thelabname.search("GLUCOSE") > -1) { //alert('glu');
+						thelabval=thelabval.replace(" ","");
+						//make sure it is a numerical measurement and not qual
+						if (thelabval.search("QUAL")==-1){ //alert('QUAL');
+								if (thelabval.length>0){
+                            Glu = Glu + thelabval + ","; // alert('Glu='+Glu);
+								}
+							}
+						}
+                        if (thelabname.search("ALANINE AMINOTRANS") > -1) {
+                            ALT = ALT + thelabval + ",";
+                        }
+                        if (thelabname.search("ASPARTATE AMINOT") > -1) {
+                            AST = AST + thelabval + ",";
+                        }
+                        if (thelabname.search("TRIGLYCERIDE") > -1) {
+                            tg = tg + thelabval + ",";
+                        }
+                        if (thelabname.search("CHOLESTEROL") > -1) {
+                            chol = chol + thelabval + ",";
+                        }
+                        if (thelabname.search("LOW DENSITY LIPOPROTEIN") > -1) { //THERE IS ALSO VERY LOW DENSITY LIPOPROTEIN SO MUST SORT
+							if (thelabname.search("VERY") > -1){vldl = vldl + thelabval + ",";}
+							else {
+                            ldl = ldl + thelabval + ",";
+							}
+                        }
+                        if (thelabname.search("HIGH DENSITY LIPOPROTEIN") > -1) {
+                            hdl = hdl + thelabval + ",";
+                        }
+                        if (thelabname.search("TOTAL BILIRUBIN") > -1) {
+                            totbili = totbili + thelabval + ",";
+                        }
+                        if (thelabname.search("PLATELETS") > -1) {
+                            Platelets = Platelets + thelabval + ",";
+                        }
+                        if (thelabname.search("HEMOGLOBIN A1C") > -1) { //alert('a1c');
+                            A1c = A1c + thelabval + ",";
+							//alert('A1c='+A1c);
+                        }
+						 if (thelabname.search("INR") > -1) { //alert('a1c');
+                            inr = inr + thelabval + ",";
+							//alert('A1c='+A1c);
+                        }
+						
+						 if (thelabname.search("SODIUM") > -1) { 
+						 // alert('SODIUM(NA)');
+                            Na = Na + thelabval + ",";
+							// alert('Na='+Na);
+                        }
+						
+						 if (thelabname.search("POTASSIUM") > -1) { 
+						 // alert('POTASSIUM');
+                            K = K + thelabval + ",";
+							// alert('K='+K);
+                        }
+						
+						 if (thelabname.search("UREA NITROGEN") > -1) { 
+						 // alert('BUN');
+                            BUN = BUN + thelabval + ",";
+							// alert('BUN='+BUN);
+                        }
+						
+						
+						
+						
+						
+						
+						
+						
+						if (myvals.search("BMI")>-1){ //alert(myvals);
+					var	theel=myvals;
+		theel=theel.replace(/\s+/g, ',');  //https://futurestud.io/tutorials/remove-all-whitespace-from-a-string-in-javascript
+	//	alert('theel='+theel);
+		//theel=theel.replace("BMI","BMI=");
+		theel=theel.replace("BMI","");
+		var bmi = theel; //still need to remove trailing comma
+		bmi=trimcomma(bmi);
+		bmi=ltrimcomma(bmi);
+	//	alert('bmi='+bmi);
+		}
+		
+		
+		if (thelabname.search("Weight-Kg")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		theel=theel.replace(/\s+/g, ',');  //https://futurestud.io/tutorials/remove-all-whitespace-from-a-string-in-javascript
+		theel=theel.replace("Weight-Kg","");
+		var wtkg = theel; //still need to remove trailing comma
+		wtkg=trimcomma(wtkg); wtkg=ltrimcomma(wtkg);
+	//		alert('wtkg='+wtkg);
+		}
+		
+		if (thelabname.search("Waist Circumference")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		theel=theel.replace(/\s+/g, ',');  //https://futurestud.io/tutorials/remove-all-whitespace-from-a-string-in-javascript
+	//	alert('theel='+theel);
+		theel=theel.replace("Waist,Circumference","");
+		var wc = theel; //still need to remove trailing comma
+			wc=trimcomma(wc); wc=ltrimcomma(wc);
+	//		alert('wc='+wc);
+		}
+		
+		
+		if (thelabname.search("BP")>-1){
+		var theel=thelabname;
+		theel=theel.replace(/\s+/g, ',');  //https://futurestud.io/tutorials/remove-all-whitespace-from-a-string-in-javascript
+		//alert('theel='+theel);
+		theel=theel.replace("BP","");
+		//get systolic and diastolic separately
+		var bp = theel; //still need to remove trailing comma
+		bp = trimcomma(bp);
+		bp=ltrimcomma(bp);
+		var sbp=""; var dbp="";
+		bparr=bp.split(",");
+		
+		for (j=0;j<bparr.length;j++){
+		//if (bparr.length)>0){
+		sbp = sbp + bparr[j].split("/")[0]+",";
+		dbp = dbp + bparr[j].split("/")[1]+",";
+	//	alert('sbp='+sbp +"     "+'dbp='+dbp);
+		//	}
+		
+			}
+		sbp=trimcomma(sbp);sbp=ltrimcomma(sbp);
+		dbp=trimcomma(dbp);
+		dbp=ltrimcomma(dbp);
+	//	alert('sbp='+sbp+' '+'dbp='+dbp);
+		}//*/
+		
+		//get age from spreadsheet
+		if (thelabname.search("Age")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		theage = thelabval;
+		document.getElementById("age").innerHTML=theage;
+		alert(theage);
+		}
+		//get sex
+		if (thelabname.search("Sex")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		thesex = thelabval;
+		document.getElementById("gender").innerHTML=thesex;
+		alert(thesex);
+		}
+		//get race
+		if (thelabname.search("Race")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		therace = thelabval;
+		document.getElementById("race").innerHTML=therace;
+	//	alert('therace='+therace);
+		}
+		//get Tx for high bp
+		if (thelabname.search("htnTx")>-1){ //alert(thelabname);
+		var theel=thelabval;
+		htntx = thelabval;
+	//	alert(htntx);
+		}
+		//get Diabetes
+		if (thelabname.search("diabetes")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		diab = thelabval;
+	//	alert('diab='+diab);
+		}
+	//	get smoker
+		if (thelabname.search("Smoker")>-1){ //alert(thelabname);
+		var theel=thelabname;
+		smok = thelabval;
+	//	alert('smok='+smok);
+		}
+	
+	
+	//	wtkg=ltrimcomma(wtkg);
+	//	wtkg=trimcomma(wtkg);
+		
+		
+                        /**/
+                        //	}
+                        //}//end of search loop
+                        //} //end of j loop
+
+                        //}
+
+                        //alert(thevals_ast+" "+thevals_alt+" "+thevals_plat);
+                    }//end of check for blank lines
+                    //fullstr=fullstr+" "+labname; alert(fullstr);
+                }//end of loop
+                //trim trailing commas
+             //   alert('cr=' + cr);
+                cr = trimcomma(cr);
+             //   alert(cr);
+                Glu = trimcomma(Glu);
+            //    alert('glu='+Glu);
+                ALT = trimcomma(ALT);
+                AST = trimcomma(AST);
+				alb = trimcomma(alb);
+                tg = trimcomma(tg); //alert('tg='+tg);
+                chol = trimcomma(chol);
+                hdl = trimcomma(hdl);
+                ldl = trimcomma(ldl);
+                totbili = trimcomma(totbili);
+                Platelets = trimcomma(Platelets);
+                A1c = trimcomma(A1c);
+				inr = trimcomma(inr);
+				Na = trimcomma(Na);
+				K = trimcomma(K);
+				BUN=trimcomma(BUN);
+				
+            //    document.getElementById("worldstr").innerHTML = "worldstr " + cr + Glu + ALT + AST + tg + chol + hdl + ldl + totbili + Platelets + A1c;
+
+                //alert(
+
+
+            //    document.getElementById("worldstr").innerHTML = 'worldstr=' + worldstr;
+			//NB all these need to have a condition so that go to next fcn if data not there
+			// alert('glu='+Glu);
+				createglu(Glu);
+                createast(AST);
+                createalt(ALT);
+                createplat(Platelets)
+                createa1c(A1c);
+                createhdl(hdl);
+                createldl(ldl);
+                createtg(tg);
+                createtgohdl(calctgohdl(tg, hdl));
+			//	alert('gihep:'+age+ bmi+ diab+ ast+ alt+ plat+ alb+ ifg);
+				createbmi(bmistr); 
+			//	createwtkg(wtkg);
+				createwtlb(weightstr);
+				createsbp(systolicstr); // alert('sbp');
+				createdbp(diastolicstr); // alert('dbp');
+				createsmok(smokstr);
+				createalchx(alchxstr);
+				createNa(Na);
+				createK(K);
+				createBUN(BUN);
+				createcr(cr);
+				//alert('hehehtheage='+age+',thesex='+genderforascvd+',therace='+raceforascvd+',hdl='+hdl+',lel='+ldl+',sbp='+systolicstr+',dbp='+diastolicstr+'htntx='+htntxforascvd+',diab='+diabforascvd +',smok='+smokstrforascvd);	
+				//alert('doneit' + age,gender,race,totalchol,hdl,sbp,dbp,htntx,diab,smokstr);
+			//	makeascvdlink(age,gender,race,totalchol,hdl,sbp,dbp,htntx,diab,smokstrforascvd); //still need to get htntx from htnmeds list
+				//gihep(); 
+				// alert('ast='+AST);
+		// alert('gihep:'+age+' '+ bmistr+' '+ diabforascvd+' '+ AST+' '+ ALT+ ' '+Platelets+' '+alb+' '+ifg);//;////+ alt+ plat+ alb+ ifg);//
+		var astarrlen = AST.split(",").length; var endast=AST.split(",")[astarrlen-1];
+		// alert('endast='+endast);
+		var altarrlen = ALT.split(",").length; var endalt=ALT.split(",")[altarrlen-1];
+		// alert('endalt='+endalt);
+		var albarrlen = alb.split(",").length; var endalb=alb.split(",")[albarrlen-1];
+		// alert('endalb='+endalb);
+		var platarrlen = Platelets.split(",").length; var endplat=Platelets.split(",")[platarrlen-1];
+		// alert('endplat='+endplat);
+		//var ifgarrlen = ifg.split(",").length; var endifg=ifg.split(",")[ifgarrlen-1];
+		// alert('endifg='+ifg);
+		//*alert('endast='+endast+'endalt='+endalt+'endplat='+endplat+'endifg='+endifg);//+'endbmi='+endbmi+'endcr='+endcr+'totbili='+endtotbili);
+		//alert('bmistr='+bmistr);
+		var bmiarrlen = bmistr.split(",").length; var endbmi=bmistr.split(",")[bmiarrlen-1];
+		// alert('endbmi='+endbmi);
+		var crarrlen = cr.split(",").length; var endcr=cr.split(",")[crarrlen-1];
+		// alert('endcr='+endcr);
+		var totbiliarrlen = totbili.split(",").length; var endtotbili=totbili.split(",")[totbiliarrlen-1];
+		// alert('endtotbili='+endtotbili);
+		var inrarrlen=inr.split(",").length; var endinr=inr.split(",")[inrarrlen-1];
+		// alert('endinr='+endinr);
+		var Naarrlen=Na.split(",").length; var endNa=Na.split(",")[Naarrlen-1];
+		// alert('endNa='+endNa);
+		
+		//get latest sbp for ascvd
+		systolicstr=stripblanks(systolicstr);
+		var sbparrlen=systolicstr.split(",").length; var endsbp=systolicstr.split(",")[sbparrlen-1];
+		// alert('endsbp='+endsbp);
+		diastolicstr=stripblanks(diastolicstr);
+		var dbparrlen=diastolicstr.split(",").length; var enddbp=diastolicstr.split(",")[dbparrlen-1];
+		// alert('enddbp='+enddbp);
+	/*	alert('endast='+endast+'endalt='+endalt+'endplat='+endplat+'endifg='+endifg+'endbmi='+endbmi+'endcr='+endcr+'totbili='+endtotbili);
+		*/
+		
+	/*	var issmoker = "";
+		 if (smokuse.search("NEVER SMOKER") > -1) {
+                            issmoker = 0;
+							}
+		if (smokuse.search("CURRENT SMOKER") > -1) {
+                            issmoker = 1;
+							}				
+	*/	
+		// alert('diabforascvd='+diabforascvd);
+		// alert('gihep:'+age+ endbmi+ diabforascvd + endast+ endalt+ endplat+ endalb +ifg);
+		
+			
+		gihep(age, endbmi, diabforascvd, endast, endalt, endplat, endalb,ifg);
+		fib4(age, endast, endplat, endalt);
+		meld(endcr, endtotbili, endinr,endNa);
+		apri(endast, endplat); //alert('createwc');
+		// alert('tete');
+		// alert('ascvdlink='+age+' '+genderforascvd+' '+raceforascvd+' '+chol+' hdl='+hdl+' systolic='+endsbp+' diastolic='+enddbp+' diab='+diabforascvd+' htntx='+htntxforascvd+' smoker='+issmoker);
+				
+		// alert('http://www.cvriskcalculator.com/calculated?age='+age+'&gender='+genderforascvd+'&race='+raceforascvd+'&total-chol='+chol+'&hdl='+hdl+'&sbp='+endsbp+'&dbp='+enddbp+'&htntreated='+htntxforascvd+'&diabetes='+diabforascvd+'&smoker='+issmoker);
+		
+		ascvdurl = 'http://www.cvriskcalculator.com/calculated?age='+age+'&gender='+genderforascvd+'&race='+raceforascvd+'&total-chol='+chol+'&hdl='+hdl+'&sbp='+endsbp+'&dbp='+enddbp+'&htntreated='+htntxforascvd+'&diabetes='+diabforascvd+'&smoker='+issmoker ;
+		
+		document.getElementById("div2").innerHTML="<a href=\"javascript:openWinascvd('"+ascvdurl+"');\">more details</a>";
+		
+			//http://www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1'
+	
+		//alert(age,gender,race,totalchol,hdl,sbp,dbp,htntx,diab,smokstrforascvd); //still need to get htntx from htnmeds list
+		//alert('ascvdlink=');//+age+" "+gender+" "+race+" "+totalchol+" "+hdl+" "+sbp+" "+dbp+" "+htntx+" "+diab+" "+smoker);
+		
+		function getascvd() { // alert('getting ASCVD');
+            $("button").click(function () {
+                $.ajax({
+                    url: 'https://cors-anywhere.herokuapp.com/' + "www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1",
+                  //  url: 'https://cors-anywhere.herokuapp.com/' + theurl;
+					type: "GET",
+                    success: function (result) {
+                        const start = result.toString().indexOf("<h1>");
+                        const end = result.toString().indexOf("</h1>");
+                        const number = result.toString().substring(start, end + 6);
+						var thenumber = "<font color='red'>"+number+"</font>"; // alert('ascvd='+thenumber);
+                        $("#div1").html(thenumber);
+                    }
+                });
+            });
+		}
+		
+		//*/
+		
+		getascvd();
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			//	alert('done apri');
+		//	if (wc != ""){	createwc(wc); } else { alert('createwc'); }; 
+				
+			//	document.getElementById("showdiv").innerHTML = 'theage='+age+',thesex='+genderforascvd+',therace='+raceforascvd+',hdl='+hdl+',lel='+ldl+',sbp='+systolicstr+',dbp='+diastolicstr+',htntx='+htntx+',diab='+diabforascvd+',smok='+smokstr;	
+				//theage=,thesex=,therace=,hdl= 51, 34, 49,lel= 73, 25, 55, 21, 88, 21,sbp=,dbp=,htntx=undefined,diab=,smok=
+			//write vars in processdata fcn link
+			
+		////	var theurl = processdata(theage,genderforascvd,raceforascvd,hdl,ldl,systolicstr,diastolicstr,htntxforascvd,diabforascvd,smokstrforascvd));
+		//	alert('theurl='+theurl);
+		//	processdata(theage,thesex,therace,hdl,ldl,sbp,dbp,htntx,diab,smok);
+		//	document.getElementById("ascvdlink").innerHTML='<a href=\"javascript:processdata('+theage+','+thesex+','+therace+','+hdl+','+ldl+','+sbp+','+dbp+','+htntx+','+diab+','+smok+')\";>ProcessData/ASCVD</a>';
+			
+              //  createtglu(Glu);
+                /*	createtrandglu(thevals_randglu);
+                    createtsbp(thevals_sbp);
+                    createtdbp(thevals_dbp);	*/
+                //*/
+              //  document.getElementById("fullstr").innerHTML = fullstr; //cr+Glu+ALT+AST+tg+chol+hdl+ldl+totbili+Platelets+A1c;
+            }
+            reader.readAsText(file)
+            //get the elements for each type of lab test
+            //first, split by lines
+        //    alert('gottext');
+        //    alert('t=' + thetext);
+            thetextarr = thetext.split(",");
+            for (i = 0; i < thetextarr.length; i++) {
+                myvals = thetextarr[i];
+        //        alert(myvals);
+                if (i == 1) {
+        //            alert('to');
+                    createbmi(myvals);
+
+                }
+
+            }
+
+        }
+/*
+        function createbmi(thevals_bmi) {
+            var myvals = subvals(thevals_bmi);
+			alert('createbmi='+myvals);
+            $('.dynamicsparklinebmi').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '70',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '18.5',
+                    normalRangeMax: '24.9',
+                    fillColor: false,
+                    spotRadius: '3'
+                });
+            document.getElementById("recentbmi").textContent = "BMI:" + myvals[myvals.length - 1];
+
+        }
+*/
+
+
+			var range_mapast = $.range_map({  //https://omnipotent.net/jquery.sparkline/#line search for range map
+				//1: 'red',
+				'5:39': 'green',
+				'40:': 'red'
+					});
+
+
+        function createast(thevals_ast) //ranges done
+        {
+            var myvals = subvals(thevals_ast);
+          //  alert(myvals);
+            $('.dynamicsparklineast').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '60',
+                    chartRangeMin: '0',
+                    chartRangeMax: '60',
+                    normalRangeMin: '5',
+                    normalRangeMax: '40',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					//make spot color dep on in or out of normal ranges
+					valueSpots: range_mapast
+						 
+					
+                });
+				/*
+				var astvalue = myvals[myvals.length - 1];
+				if (astvalue<5){astvalstr="<font color='red'>"+astvalue+"</font>";}
+				if (astvalue>40){astvalstr="<font color='red'>"+astvalue+"</font>";}
+				
+				*/
+       ////     document.getElementById("recentast").innerHTML = "AST:" + myvals[myvals.length - 1]; //astvalstr;
+			//;
+			//make a general function to display end values
+				var	themin = 5;
+				var	themax = 40;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentast").innerHTML = "AST:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+        }
+
+
+		var range_mapalt = $.range_map({  //https://omnipotent.net/jquery.sparkline/#line search for range map
+				//1: 'red',
+				'0:6': 'red',
+				'7:56': 'green',
+				'57:': 'red'
+					});
+
+        function createalt(thevals_alt) //ranges done
+        {
+            var myvals = subvals(thevals_alt);
+            $('.dynamicsparklinealt').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '0',
+                    chartRangeMax: '70',
+                    normalRangeMin: '7',
+                    normalRangeMax: '56',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_mapalt
+                });
+				
+				/*
+				var altvalue = myvals[myvals.length - 1];
+				if (altvalue<6){altvalstr="<font color='red'>"+altvalue+"</font>";}
+				if (altvalue>56){altvalstr="<font color='red'>"+altvalue+"</font>";}
+			*/	
+       ////     document.getElementById("recentalt").innerHTML = "ALT:"+ myvals[myvals.length - 1];  //altvalstr;
+//			//make a general function to display end values
+				var	themin = 7;
+				var	themax = 56;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentalt").innerHTML = "ALT:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+        }
+
+		var range_mapplat = $.range_map({  //https://omnipotent.net/jquery.sparkline/#line search for range map
+				'0:149': 'red',
+				'150:350': 'green',
+				'351:': 'red'
+					});
+
+
+        function createplat(thevals_plat)//ranges done
+        {
+            var myvals = subvals(thevals_plat);
+            $('.dynamicsparklineplat').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '150',
+                    normalRangeMax: '350',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_mapplat
+                });
+        ////    document.getElementById("recentplat").textContent = "Platelets:" + myvals[myvals.length - 1];
+			
+			//make a general function to display end values
+				var	themin = 150;
+				var	themax = 350;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentplat").innerHTML = "Platelets:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+        }
+
+		var range_mapa1c = $.range_map({  //https://omnipotent.net/jquery.sparkline/#line search for range map
+				'0:6': 'green',
+				'6:': 'red'
+					});
+        function createa1c(thevals_a1c) {
+            var myvals = subvals(thevals_a1c);
+            $('.dynamicsparklinea1c').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '40',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '0',
+                    normalRangeMax: '6',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_mapa1c
+                });
+				/*
+					var a1cvalue = myvals[myvals.length - 1];
+				if (a1cvalue<6){a1cvalstr="<font color='#000000'>"+a1cvalue+"</font>";}
+				if (a1cvalue>5.9){a1cvalstr="<font color='red'>"+a1cvalue+"</font>";}
+				
+            document.getElementById("recenta1c").innerHTML = "HbA1c:"+a1cvalstr;
+			*/
+        ////    document.getElementById("recenta1c").textContent = "HbA1c:" + myvals[myvals.length - 1];
+			
+			//make a general function to display end values
+				var	themin = 0;
+				var	themax = 6;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recenta1c").innerHTML = "HbA1c:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+        }
+		
+		var range_maphdl = $.range_map({  //https://omnipotent.net/jquery.sparkline/#line search for range map
+				'0:40': 'red',
+				'40:': 'green'  //for women >50 is normal
+				});
+
+        function createhdl(thevals_hdl) {  //ranges checked, https://www.healthline.com/health/high-cholesterol/levels-by-age#adults
+            var myvals = subvals(thevals_hdl);
+            $('.dynamicsparklinehdl').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '40',
+                    chartRangeMax: '120',
+                    normalRangeMin: '40',
+                    normalRangeMax: '100',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_maphdl
+                });
+           /*
+				var hdlvalue = myvals[myvals.length - 1];
+				if (hdlvalue<40){hdlvalstr="<font color='red'>"+hdlvalue+"</font>";}
+				if (hdlvalue>39){hdlvalstr="<font color='black'>"+hdlvalue+"</font>";}
+			//	
+            document.getElementById("recenthdl").innerHTML = "HDL:"+hdlvalstr;
+			*/
+		////   document.getElementById("recenthdl").textContent = "HDL:" + myvals[myvals.length - 1];
+			//make a general function to display end values
+				var	themin = 40;
+				var	themax = 100;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recenthdl").innerHTML = "HDL:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+        }
+
+		var range_mapldl = $.range_map({  //ranges checked, https://www.healthline.com/health/high-cholesterol/levels-by-age#adults//
+				'0:129': 'green',
+				'130:': 'red'  
+				});
+				
+        function createldl(thevals_ldl) {
+            var myvals = subvals(thevals_ldl);
+            $('.dynamicsparklineldl').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '40',
+                    chartRangeMax: '140',
+                    normalRangeMin: '0',
+                    normalRangeMax: '129',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_mapldl
+                });
+        ////    document.getElementById("recentldl").textContent = "LDL:" + myvals[myvals.length - 1];
+		 
+		//make a general function to display end values
+				var	themin = 0;
+				var	themax = 129;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentldl").innerHTML = "LDL:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+        }
+
+
+	var tgvalspotsrange = $.range_map({
+        
+        '0:149': 'green',
+        '150:': 'red'
+    })
+
+        function createtg(thevals_tg) {
+            var myvals = subvals(thevals_tg);
+            $('.dynamicsparklinetg').sparkline(myvals,
+                {
+                     enableTagOptions: true,
+					type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '0',
+                    chartRangeMax: '240',
+                    normalRangeMin: '0',
+                    normalRangeMax: '150',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: tgvalspotsrange
+				/*	valueSpots: //{ valueSpots: {'2': 'white'}
+					':149': 'green',
+					'150:': 'red'
+					}			*/					
+                });
+         
+/*
+				var tgvalue = myvals[myvals.length - 1];
+				if (tgvalue<151){tgvalstr="<font color='black'>"+tgvalue+"</font>";}
+				if (tgvalue>150){tgvalstr="<font color='red'>"+tgvalue+"</font>";}
+			//	
+            document.getElementById("recenttg").innerHTML = "Triglycerides:"+tgvalstr;
+*/
+
+
+	////	 document.getElementById("recenttg").textContent = "Triglycerides:" + myvals[myvals.length - 1];
+		 //make a general function to display end values
+				var	themin = 0;
+				var	themax = 150;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recenttg").innerHTML = "Triglycerides:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+        }
+/*
+        function createtghdl(thevals_tghdl) {
+            var myvals = subvals(thevals_tghdl);
+            $('.dynamicsparklinetg').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '50',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '18.5',
+                    normalRangeMax: '24.9',
+                    fillColor: false,
+                    spotRadius: '3'
+                });
+            document.getElementById("recenttghdl").textContent = "Triglycerides/HDL:" + myvals[myvals.length - 1];
+
+        }
+*/
+		var range_mapglu = $.range_map({
+        
+        '0:70': 'red',
+		'71:99':'green',
+        '100:': 'red'
+		})
+
+		
+        function createglu(thevals_glu)//ranges done
+        {	//strip out blanks
+			thevals_glu = stripblanks(thevals_glu);
+			//thevals_glu = thevals_glu.replace(/,,/g,""); alert('gluvals='+thevals_glu);
+			//thevals_glu = thevals_glu.replace(",,,",""); 
+			// alert('gluvals='+thevals_glu);
+			//thevals_glu=stripblanks(thevals_glu);
+            var myvals = subvals(thevals_glu);
+            $('.dynamicsparklineglu').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '40',
+                    chartRangeMax: '110',
+                    normalRangeMin: '70',
+                    normalRangeMax: '100',
+                    fillColor: false,
+                    spotRadius: '3',
+					//spotColor: '#ffe',
+					spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+					valueSpots: range_mapglu
+                });
+          //  document.getElementById("recentglu").textContent = "Glu:" + myvals[myvals.length - 1];
+				
+				var gluvalue = myvals[myvals.length - 1];
+				gluvalstr=gluvalue;
+				if (gluvalue<70){gluvalstr="<font color='red'>"+gluvalue+"</font>";}
+				if (gluvalue>100){gluvalstr="<font color='red'>"+gluvalue+"</font>";}
+			//	if (gluvalue>100){gluvalstr="<font color='red'>"+gluvalue+"</font>";}
+				
+			//	
+            document.getElementById("recentglu").innerHTML = "Glu:"+gluvalstr;
+	//*/
+        }
+
+		
+
+        function createrandglu(thevals_randglu)//ranges done
+        {
+            var myvals = subvals(thevals_randglu);
+            $('.dynamicsparklineglu').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '70',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '0',
+                    normalRangeMax: '125',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: ''
+                });
+            document.getElementById("recentrandglu").textContent = "Random Glu:" + myvals[myvals.length - 1];
+		/*
+				var tgvalue = myvals[myvals.length - 1];
+				if (tgvalue<151){tgvalstr="<font color='black'>"+tgvalue+"</font>";}
+				if (tgvalue>150){tgvalstr="<font color='red'>"+tgvalue+"</font>";}
+			//	
+            document.getElementById("recenttg").innerHTML = "Triglycerides:"+tgvalstr;
+*/
+
+        }
+/*
+        function createsbp(thevals_sbp) {
+            var myvals = subvals(thevals_randglu);
+            $('.dynamicsparklinesbp').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '50',
+                    chartRangeMin: '50',
+                    chartRangeMax: '240',
+                    normalRangeMin: '90',
+                    normalRangeMax: '130',
+                    fillColor: false,
+                    spotRadius: '3'
+                });
+            document.getElementById("recentsbp").textContent = "Systolic BP:" + myvals[myvals.length - 1];
+
+        }
+		*/
+/*
+        function createdbp(thevals_dbp) {
+            var myvals = subvals(thevals_dbp);
+            $('.dynamicsparklinedbp').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '50',
+                    chartRangeMin: '0',
+                    chartRangeMax: '240',
+                    normalRangeMin: '40',
+                    normalRangeMax: '80',
+                    fillColor: false,
+                    spotRadius: '3'
+                });
+            document.getElementById("recentdbp").textContent = "Diastolic BP:" + myvals[myvals.length - 1];
+
+        }
+*/
+
+		var range_mapchol = $.range_map({
+        '0:184':'green',
+        '185:': 'red'
+		})
+
+        function createtchol(chol) {
+            var myvals = subvals(chol);
+            $('.dynamicsparklinechol').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '70',
+                    chartRangeMin: '0',
+                    chartRangeMax: '40',
+                    normalRangeMin: '0',
+                    normalRangeMax: '185',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_mapchol
+                });
+            document.getElementById("recentchol").textContent = "Cholesterol:" + myvals[myvals.length - 1];
+/*
+			var tcholvalue = myvals[myvals.length - 1];
+				if (tcholvalue<186){tcholvalstr="<font color='black'>"+tcholvalue+"</font>";}
+				if (tcholvalue>185){tcholvalstr="<font color='red'>"+tcholvalue+"</font>";}
+			//	
+            document.getElementById("recentchol").innerHTML = "Cholesterol:"+tcholvalstr;
+*/			//make a general function to display end values
+				var	themin = 0;
+				var	themax = 185;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentchol").innerHTML = "Cholesterol:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+
+
+        }
+
+		var range_maptgohdl = $.range_map({ //needs checking with behari re: calcs, assumptions
+        '0:2':'green',
+        '2:4': 'red',
+		'5:': 'red'
+	
+		})
+
+        function createtgohdl(tgohdlstr) {
+            var myvals = subvals(tgohdlstr);
+            $('.dynamicsparklinetgohdl').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '30',
+                    chartRangeMin: '0',
+                    chartRangeMax: '8',
+                    normalRangeMin: '0',
+                    normalRangeMax: '2',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_maptgohdl
+                });
+        ////    document.getElementById("recenttgohdl").textContent = "Triglyceride/HDL:" + myvals[myvals.length - 1];
+			//make a general function to display end values
+				var	themin = 0;
+				var	themax = 2;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recenttgohdl").innerHTML = "Triglyceride/HDL:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+        }
+
+
+
+        function calctgohdl(tg, hdl) {
+            tgarr = tg.split(",");
+            hdlarr = hdl.split(",");
+            var tgohdlstr = "";
+            //should put in check that arrays are same length, ck that dates are same
+            for (i = 0; i < tgarr.length; i++) {
+			//ALERT(tgarr[i] + "/" + hdlarr[i]);
+                var tgohdl = tgarr[i] / hdlarr[i];
+				tgohdl=round(tgohdl,3);
+                tgohdlstr = tgohdlstr + tgohdl + ",";
+            }
+			alert('tgohdlstr='+tgohdlstr);
+            return (tgohdlstr);
+        }
+
+
+	//***added later for kidney panel
+	//normal ranges Potassium 	3.5 - 5.4 mEq/L  //from http://bloodbook.com/ranges.html
+	//Sodium 	133 - 146 mEq/L 
+	//Urea Nitrogen (BUN) 	7 - 18 mg/dL 
+	//Creatinine 	0.6 - 1.2 mg/dL 
+	var range_mapNa = $.range_map({
+        '0:132':'red',
+		'133:146':'green',
+        '147:': 'red'
+		})
+
+        function createNa(Na) {
+            var myvals = subvals(Na);
+            $('.dynamicsparklineNa').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '80',
+                    chartRangeMin: '100',
+                    chartRangeMax: '180',
+                    normalRangeMin: '133',
+                    normalRangeMax: '146',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_mapchol
+                });
+         ////   document.getElementById("recentNa").textContent = "Na:" + myvals[myvals.length - 1];
+		/*		
+				var navalue = myvals[myvals.length - 1];
+				navalstr= navalue;
+				if (navalue<133){navalstr="<font color='red'>"+navalue+"</font>";}
+				if (navalue>146){navalstr="<font color='red'>"+navalue+"</font>";}
+			//	
+            document.getElementById("recentna").innerHTML = "Na:"+navalstr;
+			*/
+			
+			//make a general function to display end values
+				var	themin = 133;
+				var	themax = 146;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentNa").innerHTML = "Na:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+        }
+		
+		
+		var range_mapK = $.range_map({
+        '0:3.4':'red',
+		'3.5:5.4':'green',
+        '5.5:': 'red'
+		})
+
+        function createK(K) {
+            var myvals = subvals(K);
+            $('.dynamicsparklineK').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '80',
+                    chartRangeMin: '0',
+                    chartRangeMax: '10',
+                    normalRangeMin: '3.5',
+                    normalRangeMax: '5.4',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_mapchol
+                });
+            document.getElementById("recentK").textContent = "K:" + myvals[myvals.length - 1];
+		  	/*	var kvalue = myvals[myvals.length - 1];
+				kvalstr= kvalue;
+				if (kvalue<3.5){kvalstr="<font color='red'>"+kvalue+"</font>";}
+				if (kvalue>5.4){kvalstr="<font color='red'>"+kvalue+"</font>";}
+			//	
+            document.getElementById("recentk").innerHTML = "K:"+kvalstr; 
+		   */
+			//Triglyceride/HDL
+        }
+
+		var range_mapBUN = $.range_map({
+        '0:6':'red',
+		'7:18':'green',
+        '19:': 'red'
+		})
+
+        function createBUN(BUN) {
+            var myvals = subvals(BUN);
+            $('.dynamicsparklineK').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '70',
+                   chartRangeMin: '0',
+                    chartRangeMax: '30',
+                    normalRangeMin: '7',
+                    normalRangeMax: '18',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_mapchol
+                });
+            document.getElementById("recentBUN").textContent = "BUN:" + myvals[myvals.length - 1];
+		
+		/*
+		//make a general function to display end values
+				var	themin = 7;
+				var	themax = 18;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentBUN").innerHTML = "BUN:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		*/
+
+        }
+
+
+		var range_mapcr = $.range_map({
+        '0:0.5':'red',
+		'0.6:1.2':'green',
+        '1.3:': 'red'
+		})
+
+        function createcr(cr) { alert('cr='+cr);
+            var myvals = subvals(cr);
+            $('.dynamicsparklineK').sparkline(myvals,
+                {
+                    type: 'line',
+                    width: '100',
+                    height: '70',
+                    chartRangeMin: '0',
+                    chartRangeMax: '30',
+                    normalRangeMin: '0,6',
+                    normalRangeMax: '1.2',
+                    fillColor: false,
+                    spotRadius: '3',
+					spotColor: '',
+					valueSpots: range_mapchol
+                });
+         //   document.getElementById("recentcr").textContent = "Cr:" + myvals[myvals.length - 1];
+			
+		 
+		 //make a general function to display end values
+				var	themin = 0.6;
+				var	themax = 1.2;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+					 alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} // alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}// alert(endvalstr);
+		 document.getElementById("recentcr").innerHTML = "Cr:"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		 //*/
+		 
+	   }
+
+
+
+
+
+//***end of addition
+
+	//from getbp.html
+	var range_mapsbp = $.range_map({
+        '0:59':'red',
+        '60:140': 'green',
+		'141:':'red'
+		})
+		var endsbp="";
+	function createsbp(thevals_sbp) //ranges done
+	
+	{ //alert('getting sbp');
+			//strip out blanks
+			thevals_sbp = stripblanks(thevals_sbp);
+		var myvals = subvals(thevals_sbp);
+	//	alert(myvals);
+		$('.dynamicsparklinesbp').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '40',
+		chartRangeMin: '0',
+		chartRangeMax: '150',
+		normalRangeMin: '60',
+		normalRangeMax: '140',
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: '',
+		valueSpots: range_mapsbp
+		});
+		//document.getElementById("recentsbp").textContent = "SBP:" + myvals[myvals.length-1];	
+		endsbp=myvals[myvals.length-1];
+		endsbpstr = endsbp;
+	
+				
+				if (endsbp<60){endsbpstr="<font color='red'>"+endsbp+"</font>";}
+				if (endsbp>140){endsbpstr="<font color='red'>"+endsbp+"</font>";}
+			//	
+            document.getElementById("recentsbp").innerHTML = "SBP:"+endsbpstr; 
+	
+	}
+	
+	var range_mapdbp = $.range_map({
+        '0:59':'red',
+        '60:140': 'green',
+		'141:':'red'
+		})
+	//var enddbp=createdbp(diastolicstr);
+	function createdbp(thevals_dbp) //ranges done
+	{ //alert('getting dbp');
+		//strip out blanks
+		thevals_dbp = stripblanks(thevals_dbp);
+		var myvals = subvals(thevals_dbp);
+	//	alert(myvals);
+		$('.dynamicsparklinedbp').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '40',
+		chartRangeMin: '0',
+		chartRangeMax: '150',
+		normalRangeMin: '60',
+		normalRangeMax: '140',
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		valueSpots: range_mapdbp
+		});
+		document.getElementById("recentdbp").textContent = "DBP:" + myvals[myvals.length-1];	
+		enddbp=myvals[myvals.length-1];
+		return(enddbp);
+	}
+	
+	var range_mapwc = $.range_map({  //requires complex calc, see https://www.nhlbi.nih.gov/health/educational/lose_wt/BMI/bmi_dis.htm
+       // '0:59':'red',
+       // '60:140': 'green',
+		//'141:':'red'
+		})
+	
+	function createwc(thevals_wc) //ranges done   94 cm in men, 80 cm in women or 35 inches for women and 40 inches for men is risky  https://www.sepalika.com/living-well/healthy-waist-size/
+	{ //alert('getting wc='+thevals_wc);
+		var myvals = subvals(thevals_wc);
+		//alert(myvals);
+		$('.dynamicsparklinewc').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '0',
+		chartRangeMax: '30',
+		normalRangeMin: '20',
+		normalRangeMax: '30',
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: '' //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		
+		});
+	////	document.getElementById("recentwc").textContent = "Waist (inches):" + myvals[myvals.length-1];	
+		
+		//make a general function to display end values
+				var	themin = 20;
+				var	themax = 30;
+					endval = myvals[myvals.length - 1];
+					endvalstr=endval; //the default
+				//	alert('ENDVALSTR='+endvalstr);
+                   if (endval<themin){endvalstr="<font color='red'>"+endval+"</font>";} //alert(endvalstr);
+					if (endval>themax){endvalstr="<font color='red'>"+endval+"</font>";}//alert(endvalstr);
+			document.getElementById("recentwc").innerHTML = "Waist (inches):"+endvalstr;   //note that this uses innerHTML rather than .textcontent
+		
+	}
+	
+	var rangemapbmi= $.range_map({
+        '0:18.5':'red',
+        '18.6:24.9': 'green',
+		'25:':'red'
+		})
+	
+	
+	function createbmi(thevals_bmi) //ranges done
+	{ // alert('getting bmi');
+		var myvals = subvals(thevals_bmi);
+	//	alert(myvals);
+		$('.dynamicsparklinebmi').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '10',
+		chartRangeMax: '40',
+		normalRangeMin: '18',
+		normalRangeMax: '25',
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: '', //removes the default end spot color which was bright green and therefore misleading if the end spot is out of range
+		valueSpots: rangemapbmi
+		});
+		//document.getElementById("recentbmi").textContent = "BMI:" + myvals[myvals.length-1];	
+		
+		var bmivalue = myvals[myvals.length - 1];
+				bmivalstr=bmivalue;
+				if (bmivalue<18){bmivalstr="<font color='red'>"+bmivalue+"</font>";}
+				if (bmivalue>25){bmivalstr="<font color='red'>"+bmivalue+"</font>";}
+				
+			document.getElementById("recentbmi").innerHTML = "BMI:"+bmivalstr;
+
+	}
+	
+	function createwtkg(thevals_wtkg) //ranges done, but needs to be done vis a vis height etc.
+	{ //alert('getting wtkg' + thevals_wtkg);
+		var myvals = subvals(thevals_wtkg);
+	//	alert(myvals);
+		$('.dynamicsparklinewtkg').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '80',
+		chartRangeMax: '200',
+		normalRangeMin: '45',
+		normalRangeMax: '180', //not really accurate, dep on height
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: ''
+		});
+		if (myvals.length>1){
+		document.getElementById("recentwtkg").textContent = "Wt(kg):" + myvals[myvals.length-1];	
+		} else {
+		document.getElementById("recentwtkg").textContent = "Wt(kg):" + myvals;//[myvals.length-1];	
+		}
+	}
+	//end of insertion from getbp.html
+
+	function createwtlb(weightstr) //ranges done, but needs to be done vis a vis height etc.
+	{ //alert('getting wtkg' + thevals_wtkg);
+		var myvals = subvals(weightstr);
+	//	alert(myvals);
+		$('.dynamicsparklinewtlb').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '80',
+		chartRangeMax: '300',
+		normalRangeMin: '45',
+		normalRangeMax: '280', //not really accurate, dep on height
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: ''
+		});
+		if (myvals.length>1){
+		document.getElementById("recentwtlb").textContent = "Wt(lb):" + myvals[myvals.length-1];	
+		} else {
+		document.getElementById("recentwtlb").textContent = "Wt(lb):" + myvals;//[myvals.length-1];	
+		}
+	}
+
+
+
+
+
+
+		var smokstrforascvd=0;
+		function createsmok(smokstr){ // alert('createsmok' + smokstr);
+	if (smokstr.length>0){
+		var myvals = subvals(smokstr);
+		// alert(myvals);
+		$('.dynamicsparklinesmok').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '0',
+		chartRangeMax: '5',
+		//normalRangeMin: '45',
+		//normalRangeMax: '180', //not really accurate, dep on height
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: ''
+		});
+		// alert('length:'+ myvals.length);
+		
+		if (myvals.length>1){ 
+		theval = myvals[myvals.length-1];
+		if (theval > 0){thevalstr = '<font color="red">'+theval+'</font>';}
+		document.getElementById("recentsmok").innerHTML = "Packs/day:" + thevalstr; 
+		smokstrforascvd=1;
+		//myvals[myvals.length-1];	
+		} else {
+		theval = myvals;
+		if (theval > 0){thevalstr = '<font color="red">'+theval+'</font>';}
+		document.getElementById("recentsmok").innerHTML = "Packs/day:" + thevalstr; //myvals;//[myvals.length-1];	
+		}
+		}
+		
+		else { //no smoking data
+		document.getElementById("recentsmok").innerHTML='No smoking data';
+		}
+} //end of createsmok
+
+		var range_mapalchx = $.range_map({
+        
+        '0:7': 'green',
+		'8:':'red',
+        
+		})
+
+		function createalchx(alchxstr){
+			if (alchxstr.length>0){
+		
+		var myvals = subvals(alchxstr);
+	//	alert(myvals);
+		$('.dynamicsparklinealchx').sparkline(myvals,
+		{
+		type: 'line', 
+		width: '100', 
+		height: '30',
+		chartRangeMin: '0',
+		chartRangeMax: '20',
+		normalRangeMin: '1',
+		normalRangeMax: '7', 
+		fillColor: false,
+		spotRadius: '3',
+		spotColor: '',
+		valueSpots: range_mapalchx
+		});
+		if (myvals.length>1){
+		document.getElementById("recentalchx").innerHTML = "Drinks/wk:" + myvals[myvals.length-1];	
+		} else {
+		document.getElementById("recentalchx").innerHTML = "Drinks/wk:" + myvals;//[myvals.length-1];	
+		}
+		} else {//no alcohol data
+			document.getElementById("recentalchx").innerHTML ="No drinking data";
+			}
+		}
+
+
+        function gihep(age, bmi, diab, ast, alt, plat, alb, ifg) {
+		// alert('gihep:'+age+ bmi+ diab+ ast+ alt+ plat+ alb+ ifg);
+		//note: IFG is impaired fasting glucose, is yes/no (1 or 0)
+           /* age = 64;
+            bmi = 26;
+            diab = 1;
+            ast = 25;
+            alt = 31;
+            plat = 247;
+            alb = 4.7;
+            ifg = 1;
+			*/
+            var gihep = -1.675 + (0.037 * age) + (0.094 * bmi) + (1.13 * ifg) + (0.99 * ast / alt) - (0.013 * plat) - (0.66 * alb);
+       //     alert(gihep);
+            gihep = round(gihep, 2);
+       //     alert(gihep);
+
+			//note, for actual display we were told to use 'NFS'
+            gihepstr = "&nbsp;NFS=<b>" + gihep + "</b>"; <!--<br><br>NAFLD Score < -1.455 = F0-F2<br>NAFLD Score -1.455 – 0.675 = indeterminate score<br>NAFLD Score > 0.675 = F3-F4"; -->
+            document.getElementById("gihep").innerHTML = gihepstr;
+        }
+
+        function round(value, decimals) {
+            return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+        }
+
+        function fib4(age, ast, plat, alt) {   ///NB get it from https://www.hepatitisc.uw.edu/page/clinical-calculators/fib-4
+		
+		// alert('fib4: '+age + " "+ast+ " "+plat+" "+alt);
+        /*    age = 64;
+            ast = 25;
+            alt = 31;
+            plat = 247;
+		*/
+            var fib4 = (age * ast) / (plat * Math.sqrt(alt)); //works, verified with link page
+            fib4 = round(fib4, 2);
+            fib4str = "&nbsp;FIB4:  <b>" + fib4 + "</b>";
+            //alert(fib4);
+            document.getElementById("fib4").innerHTML = fib4str;
+
+        }
+
+        function meld(cr, bili, inr,Na) { //there is a calc at https://www.hepatitisc.uw.edu/go/management-cirrhosis-related-complications/liver-transplantation-referral/calculate-meld-score but this is not based on that
+		
+		//**** calc here is based on UNOS modified MELD (now includes serum sodium, instructions are on the Evidence tab below the Reslut button on the form at https://www.mdcalc.com/meld-score-model-end-stage-liver-disease-12-older#evidence
+		
+        //    alert('meld');
+
+          //  bili = 0.9;
+          //  cr = 0.97;
+          //  inr = 1.1;
+            if (cr < 1) {
+                cr = 1;
+            }
+            if (bili < 1) {
+                bili = 1;
+            }
+            if (inr < 1) {
+                inr = 1;
+            }
+            // alert('MELD: cr=' + cr + '  bili=' + bili + '  inr=' + inr+" "+'Na='+Na);
+        ////    var meld = 0.957 * Math.log(cr) + 0.378 * Math.log(bili) + 1.120 * Math.log(inr) + 0.643;
+           //the above line is the old calc; it differs from that in https://www.merckmanuals.com/medical-calculators/MELDNa.htm - has meldNa ormula: 
+		   //because the merck formula has +6.43 at the end, not 0.643
+		   
+		   //using Merck:
+			var meld = 0.957 * Math.log(cr) + 0.378 * Math.log(bili) + 1.120 * Math.log(inr) + 6.43;
+          
+
+
+		   /**/
+            // alert(meld);
+            meld = round(meld, 10);  //as per instructions, round to 10th decimal place and multiply by 10, if score is >11, do additional calcs with sodium
+			meld = meld*10;
+			
+			//Merck score calc: 
+			meldnascore = meld - Na - (0.025*meld*(140-Na))+140;
+			alert('meldnascore='+meldnascore);
+			
+			
+			//meld = 12;
+			if (meld>11){
+			
+			//var Nasub = 137-Na;  //removed in favour of Merck meld Na calc
+			//theadjust = 1.32*Nasub - (0.033 * meld * Nasub) //removed in favour of Merck meld Na calc
+			// alert(theadjust);
+		//	var theadjust = 1.32 * (137 – Na) –  ( 0.033 * meld * (137 – Na));
+			//alert(theadjust);
+			//meld = meld + 1.32 * (137 – Na) –  ( 0.033 * meld * (137 – Na) );
+			//meld=meld+ theadjust;  //removed in favour of Merck meld Na calc
+			// alert('meldNa='+meld);
+			}
+			
+			
+			
+			//meld=round(meld,2);
+			//need to round to whole no.:
+			meld=round(meld);
+			meldnascore = math.round(meldnascore);
+			
+            meldstr = "&nbsp;MELD: <b>" + meld + "   "+meldnascore+"</b>";
+            document.getElementById("meld").innerHTML = meldstr;
+        }
+
+        function apri(ast, plat) { //alert('apri');
+          //  ast = 25;
+          //  plat = 247;
+          //  alert(ast + " " + plat);
+            ASThilimit = 40;//upper limit of normal
+            var apri = [(ast / ASThilimit) / plat] * 100;
+         //   alert('apri='+apri);
+            apri = round(apri, 2);
+            apristr = "&nbsp;APRI: <b>" + apri+"</b>";
+            document.getElementById("apri").innerHTML = apristr;
+
+        }
+
+		function makeascvdlink(age,genderforascvd,raceforascvd,totalchol,hdl,sbp,dbp,htntx,diab,smoker){
+		// alert('ascvdlink='+age+" "+gender+" "+race+" "+totalchol+" "+hdl+" "+sbp+" "+dbp+" "+htntx+" "+diab+" "+smoker);
+		//http://www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1'
+		
+		}
+
+//match drugs
+/*
+var choldruglist = "Statin,Niacin,clofibrate,fenofibrate,gemfibrozil,cholestyramine,colesevelam hcl,colestipol,ezetimibe,alirocumab,evolocumab,Omega-3";
+
+function matchdrugs(thedruglist,drugstr,drugtype,themed){
+alert(thedruglist,drugstr,drugtype);
+druglistarr=thedruglist.split(",");
+for,d=0;d<druglistarr.length;d++){
+	thedrug = druglistarr[d];
+	if(themed.search(thedrug)>-1){
+	//document.getElementById("diabmeds").innerHTML = document.getElementById("diabmeds").innerHTML + "_____________<br>" + themed ;//+ "\n"; //NB this line will give all the meds by reverse date order,i.e. the order in the file)
+
+	//create the drugstr and put it in the relevant div in page
+	drugstr = drugstr + "<br>" + themed;
+	
+	
+
+//for general use; we just take the first,most recent) med listing of the duplicate meds.  
+/*
+if,thedrug != prevdiabmed)
+{diabmedstr=diabmedstr + "<br>"+themed;
+prevdiabmed = thedrug; 
+
+		}document.getElementById(drugtype).innerHTML = drugstr;
+
+	}
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+        //}
+        //Laboratory values less than 1.0 will be set to 1.0 when calculating a candidate’s MELD score
+        //}
+        //GIHEP =-1.675+0.037*age+0.094*BMI+1.13*IFG/diabetes(1 or 0) + 0.99*AST/ALT-0.013*platelet(x109/l)-0.66*albumin(g/dl)
+        //FIB4  (Age*AST)/Platelets*root(ALT)
+        //CVD  http://www.cvriskcalculator.com
+        /*	Age (years) 40-79
+        Gender  Male  Female
+        Race  African American  Other
+        Total cholesterol (mg/dL) 130-320
+        HDL cholesterol (mg/dL) 20-100
+        Systolic blood pressure (mmHg) 90-200
+        Diastolic blood pressure (mmHg) 30-140
+        Treated for high blood pressure  No  Yes
+        Diabetes  No Yes
+        Smoker  No Yes
+             */
+        // MELD 0.957 x Loge(creatinine mg/dL) + 0. 378 x Loge(bilirubin mg/dL) + 1.120 x Loge (INR) + 0.643 Laboratory values less than 1.0 will be set to 1.0 when calculating a candidate’s MELD score
+        //APRI  [(AST/AST(upper limit of normal))/Platelet count]*100
+        //NFS nafldscore.com  Age (years)   <form action="index.php" method="POST">
+        /*BMI (kg/m2)
+        IGF/diabetes
+        AST
+        ALT
+        Platelets (x109/l)
+        Albumin (g/l)
+        */
+
+//from my rpa cvd risk submitter, example url: http://www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1
+	function processdata(theage,thesex,therace,hdl,ldl,sbp,dbp,htntx,diab,smok){
+	// alert('processing');
+	////var theurl = "http://www.cvriskcalculator.com/calculated?";  //we start a string that will be the url that the window opens, then we add the parameters from the form
+	var theurl = "www.cvriskcalculator.com/calculated?";
+//	// alert('processing data');
+//	alert(theage,thesex,therace,hdl,ldl,sbp,dbp,htntx,diab,smok);
+	//var age = document.forms["theform2"]["age"].value;
+//	alert("age="+theage); theage=theage.replace("\r","");
+	var theurl = theurl + "age="+theage;
+//	alert(theurl); //just checking that we got the age correctly
+	var gender = thesex; //document.forms["theform"]["gender"].value;
+	thesex=thesex.replace("\r","");
+	theurl = theurl + "&gender="+thesex; //male=1, female=0
+//	alert(theurl);  //checking again that we got the gender
+	therace=therace.replace("\r","");
+	theurl = theurl + "&race="+therace;  //1=African-American, 0=other
+//	alert(theurl);
+	//get last value for params which are a list
+	var hdlarr=hdl.split(",");
+	var thehdl=hdlarr[hdlarr.length-1]; //alert('thehdl='+thehdl);
+	//myvals[myvals.length-1]
+	var ldlarr=ldl.split(",");
+	var theldl=ldlarr[ldlarr.length-1]; //alert('theldl='+theldl);
+	var sbparr=sbp.split(",");
+	var thesbp=sbparr[sbparr.length-1]; //alert('thesbp='+thesbp);
+	var dbparr=dbp.split(",");
+	var thedbp=dbparr[dbparr.length-1];
+//	alert(theurl); 
+	thehdl=thehdl.replace("\r",""); //alert('replaced'+thehdl);
+	theldl=theldl.replace("\r",""); //alert('replaced'+theldl);
+	thehdl=thehdl.trim();
+	theldl=theldl.trim();
+//	alert(thehdl+"haha "+theldl); alert('xxx'+parseInt(thehdl));
+//	alert('addn='+ parseInt(thehdl) + parseInt(theldl));
+	thehdl=parseInt(thehdl); //alert('float'+thehdl);
+	theldl=parseInt(theldl); //alert('float'+theldl);
+	//var totalchol = parsefloat(thehdl) + parsefloat(theldl); 
+	var totalchol=theldl+thehdl;
+//	alert('total-chol='+totalchol);
+	theurl = theurl + "&total-chol="+totalchol;
+	theurl = theurl + "&hdl="+thehdl;
+	theurl = theurl + "&sbp="+thesbp;
+	theurl = theurl + "&dbp="+thedbp;
+	htntx=htntx.replace("\r","");
+	theurl = theurl + "&htntreated="+htntx; //1 or 0
+	diab=diab.replace("\r","");
+	theurl = theurl + "&diabetes="+diab; //1 or 0
+	smok=smok.replace("\r","");
+	theurl = theurl + "&smoker="+smok; //1 or 0
+//	alert('theurl='+theurl);
+//	document.forms[0].thetext.value=theurl;
+////document.getElementById("ascvd").innerHTML='<a href="'+theurl+'">ASCVD page</a>';
+	//at the end we open the window
+	//openWin(theurl);
+	//loadDoc(theurl);
+	return(theurl);
+	}
+	
+	/*
+	function submittourl(){
+	alert('submitting');
+	document.theform2.action="http://www.cvriskcalculator.com/calculated?total-chol="+document.theform2.totalchol.value;
+	alert(document.theform2.action="http://www.cvriskcalculator.com/calculated?total-chol="+document.theform2.totalchol.value);
+	document.theform2.totalchol.name="total-chol";
+	
+	document.theform2.submit();
+
+	} */
+//end
+	//get ASCVD recommendation in ajax call and put into ASCVD box
+
+
+
+//popup open
+function openWin(theurl) {
+  myWindow = window.open(theurl, "myWindow", "width=300,height=600");   // Opens a new window
+}
+
+function openWinascvd(theurl) {
+  myWindowascvd = window.open(theurl, "myWindowascvd", "width=300,height=600");   // Opens a new window
+}
+
+function openWineoss(theurl){
+ myWindoweoss = window.open(theurl, "myWindoweoss", "width=640,height=1200");   // Opens a new window
+
+}
+
+        function trimcomma(str) {
+         //   alert('str=' + str);
+            var len = str.length;
+            if (str.substr(len - 1, 1) == ",") {
+                str = str.substring(0, len - 1);
+          //      alert('trimmed=' + str);
+                //remove (H) and (L)
+                str = str.replace(/\(H\)/ig, "");
+                str = str.replace(/\(L\)/ig, "");
+//alert('trimmed=' + str);
+            }
+            return str;
+        }
+
+//from getbp.html
+function ltrimcomma(str){
+//	alert('str='+str);
+	  var len = str.length;
+    if (str.substr(0,1) == ",") {
+        str = str.substring(1,len);
+	//	alert('trimmed='+str);
+	//remove (H) and (L)
+	//str=str.replace(/\(H\)/ig,"");str=str.replace(/\(L\)/ig,"");
+	
+    } return str;
+	}
+//end of addition from getbp.html
+
+//this function gets rid of blank entries in lists of data for sparklines, e.g. converts:  3,4,5,,,4,6,,3,5,,,,,7 to 3,4,5,4,6,3,5,7 so that in sparkline empty entries don't show as below range
+
+    function stripblanks(thestr) { 
+	finalstr="";
+	//alert('hehe');
+	//var string = "3,4,5,,3,4,,,,5,,6"; 
+	var string = thestr;
+	var word=",,";
+   //alert(string.split(word).length - 1);
+   thearr = string.split(",");
+   thelen = string.split(",").length; //alert('thelen='+thelen);
+   /**/
+   for (i=0;i<thelen;i++){ //alert(i);//alert(string);
+  /// if (string.split(word).length>1){
+  // if (string.search(word).length-1>0){ alert(string);
+  //if (string.search(",,")>-1){ alert(string);
+		//string = string.replace(",,",","); //doesn't work always
+///	string = string.replace(word);
+		//}
+			if (thearr[i].length>0){
+			finalstr = finalstr + thearr[i]+",";
+			}
+   //} 		
+   
+      }
+	  //remove trailing comma
+	  finalstr = trimcomma(finalstr); finalstr=ltrimcomma(finalstr);
+	  //alert('strippedstring='+finalstr); 
+	  return(finalstr);
+	}
+
+	function getAge(DOB) {
+	//var DOB='6/30/63'; alert(DOB);
+    var today = new Date();
+    var birthDate = new Date(DOB);
+    var age = today.getFullYear() - birthDate.getFullYear();
+    var m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age = age - 1;
+    }
+// alert(age);
+    return age;
+}
+
+
+    </script>
+</head>
+<div class="container">
+    <body>
+    Click the button then choose a file to see its contents displayed below.
+    <button onclick="openFile()">Open a file</button>
+    <input id="inp" type='file' style="visibility:hidden;" onchange="readFile(event)"/>
+	<br><br><br>
+    <pre id="contents"></pre>
+    <div id="showdiv"></div>
+  <!--  <div id="tgohdl"></div>
+    <div id="fullstr">fullstr</div>
+    <div id="worldstr">worldstr</div>  -->
+	
+   <!-- <a href="javascript:gihep();">gihep</a><br>
+    <div id="gihep"></div>
+    <a href="javascript:fib4();">FIB4</a><br>
+    <div id="fib4"></div>
+    <a href="javascript:meld();">MELD</a><br>
+    <div id="meld"></div>
+    <a href="javascript:apri();">APRI</a><br>
+    <a href="javascript:createast();">createast</a><br>
+    <a href="javascript:createalt();">createalt</a><br>
+    <a href="javascript:createplat();">createplat</a><br>
+    <a href="javascript:createglu();">fasting glu</a><br>
+    <a href="javascript:createrandglu();">rand glu</a><br>
+    <div id="apri"></div>-->
+<!--<a href="javascript:createwc(39)";>createwc</a>
+<div id="ascvdlink"></div> <a href="javascript:openWin('http://www.cvriskcalculator.com/calculated?age=64&gender=1&race=1&total-chol=156&hdl=65&sbp=114&dbp=82&htntreated=1&diabetes=1&smoker=0');">openwin</a>
+-->
+<!--
+<form action=""><textarea name="thetext"></textarea></form> -->
+  <!--  <a href="javascript:loadDoc('http://www.cvriskcalculator.com/calculated?age=64&gender=1&race=1&total-chol=156&hdl=65&sbp=114&dbp=82&htntreated=1&diabetes=1&smoker=0');">loaddoc</a> -->
+<table><tr><td valign="top">
+<!--    Diabetes Management Form-->
+<table class="innertbl" width=300><tr><th bgcolor="lightblue" colspan=2>
+Diabetes Management
+   </td></tr>
+   <tr><td>
+     <span class="dynamicsparklineglu">..</span></td><td><span class="recent" id="recentglu"></span></td></tr>     
+  <!--<span class="dynamicsparklinerandglu">..</span><span class="recent" id="recentrandglu"></span><br>-->
+  <!-- <tr><td><span class="dynamicsparklinea1c">asdfasdf</span></td><td><span class="recent" id="recenta1c"></span></td></tr> -->
+     <tr><td><span class="dynamicsparklinea1c"></span></td><td><span class="recent" id="recenta1c"></span></td></tr>
+	 <!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td colspan=2><div id="diabmeds"></div><!--Metformin--><!--</td><td>--><!--1500mg--></td></tr>
+	 
+	 </table><b><div id="age">age</div><div id="race">race</div><div id="gender">sex</div></b>
+</td><td width=200></td><th valign="top">
+<!--        Liver Health Form-->
+        <table class="innertbl"><tr><th colspan=2 bgcolor="lightblue">Liver Health</td></tr>
+<tr><td><span class="dynamicsparklineast">loading..</span></td><td align="left"><span class="recent" id="recentast"></span></td></tr>
+<tr><td><span class="dynamicsparklinealt">..</span></td><td><span class="recent" id="recentalt"></span></td></tr>
+<tr><td><span class="dynamicsparklineplat">..</span></td><td><span class="recent" id="recentplat"></span></td></tr>
+
+					 <tr><td></td><td><div id="gihep"></div></td></tr>
+					 <tr><td></td><td><div id="fib4"></div></td></tr>
+					 <tr><td></td><td><div id="meld"></div></td></tr>
+					 <tr><td></td><td><div id="apri"></div></td></tr>
+					  <tr><td></td><td><div id="quantus">&nbsp;Quant US</div></td></tr>
+					   <tr><td></td><td><div id="uselasto">&nbsp;US Elasto</div></td></tr>
+					    <tr><td></td><td><div id="biopsy">&nbsp;Biopsy</div></td></tr>
+	<!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td><span id="livermeds"></span><!--Inositol--></td><td><!--4g--></td></tr>
+		 <tr><td><!--Omega3 fatty acids/Vit E --></td><td><!--1000mg--></td></tr>
+ </table>
+</td><td width=200></td><td valign="top">
+	<!--CV triple table (local container table)-->
+	<table><tr><td colspan=2 align="middle">
+<table class="innertbl"><tr><th colspan=2 bgcolor="lightblue">Cardiovascular Health - ASCVD</td></tr>
+<!--added from getbp.html -->
+<tr><td><span class="dynamicsparklineascvd" height="50px"></span></td><td><span class="recent" id="recentascvd" align="middle"></span><a href="javascript:openWin('http://www.cvriskcalculator.com/calculated?age=75&gender=1&race=1&total-chol=244&hdl=65&sbp=+156&dbp=92&htntreated=1&diabetes=1&smoker=1');" id="ascvdlink2">Details</a><br>
+
+
+<div id="div1"></div><div id="div2"></div></td></tr>
+	<!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td></td><td></td></tr>
+
+</table>
+
+	</td></tr><!--CV local container tbl-->
+	<tr><td valign="top">
+
+<!-- Cardiovascular health - Blood pressure -->
+
+<table class="innertbl"><tr><th colspan=2 bgcolor="lightblue">Cardiovascular Health - Blood pressure</td></tr>
+<!--added from getbp.html -->
+<tr><td><span class="dynamicsparklinesbp" height="50px"></span><!--</td><td>--><span class="recent" id="recentsbp" align="middle"></span></td></tr>
+<tr><td><span class="dynamicsparklinedbp"></span><!--</td><td>--><span class="recent" id="recentdbp" align="middle"></span></td></tr>
+<!--<tr><td>
+<span class="dynamicsparklinewc"></span></td><td><span class="recent" id="recentwc" align="middle"></span></td></tr>
+<tr><td><span class="dynamicsparklinebmi"></span></td><td><span class="recent" id="recentbmi" align="middle"></span></td></tr> -->
+<!--end of addition -->
+
+
+
+<!--
+<tr><td> <span class="dynamicsparklinesbp">..</span></td><td><span class="recent" id="recentsbp"></span></td></tr>
+ <tr><td><span class="dynamicsparklinechol">..</span></td><td><span class="recent" id="recentchol"></span></td></tr> -->
+ <tr><th bgcolor="#d6f5f5" colspan=2>Medications:</font></th></tr>
+ <tr><td ><span id="htnmeds"></span> <!--</td><td>--><!--5mg--></td></tr><tr><td ></td><td></td></tr><tr><td ></td><td></td></tr>
+ 
+ </table>
+	<!--CV local container -->
+	<!--</td><td valign="top"> -->
+
+<!--        Cardiovascular Health - Cholesterol Form-->
+   <table class="innertbl"><tr><th colspan=2 bgcolor="lightblue">Cardiovascular Health - Cholesterol</td></tr>
+    <tr><td><span class="dynamicsparklinehdl">..</span></td><td><span class="recent" id="recenthdl"></span></td></tr>
+<tr><td><span class="dynamicsparklineldl"></span></td><td><span class="recent" id="recentldl"></span></td></tr>
+                    <tr><td><span class="dynamicsparklinetg">..</span></td><td><span class="recent" id="recenttg"></span>
+                    </td></tr>
+                    <tr><td><span class="dynamicsparklinetgohdl">..</span></td><td><span class="recent" id="recenttgohdl"></span></td></tr>
+             <!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td><!--Pravastatin--><span id="cholmeds"></span></td><td><!--20mg--></td></tr>  
+	</table>
+	
+	</td></tr></table><!--CV local container tbl-->
+	
+	</td><!--</table>-->
+  <!--  <span class="dynamicsparklineglu">..</span><span class="recent" id="recentglu"></span><br></div>
+    <span class="dynamicsparklinerandglu">..</span><span class="recent" id="recentrandglu"></span><br>-->
+   <!-- <span class="dynamicsparklinea1c">..</span><span class="recent" id="recenta1c"></span><br> -->
+  <!--  <span class="dynamicsparklinechol">..</span><span class="recent" id="recentchol"></span><br> -->
+ <td valign="top" rowspan=6>
+ <table class="innertbl"><tr><th colspan=2 bgcolor="lightblue">Kidney</td></tr>
+ <tr><td><span class="dynamicsparklineNa">..</span></td><td><span class="recent" id="recentNa"></span></td></tr>
+ <tr><td><span class="dynamicsparklineK">..</span></td><td><span class="recent" id="recentK"></span></td></tr>
+<tr><td><span class="dynamicsparklineBUN">..</span></td><td><span class="recent" id="recentBUN"></span></td></tr>
+<tr><td><span class="dynamicsparklinecr">..</span></td><td><span class="recent" id="recentcr"></span></td></tr>
+
+  <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+ 
+  <tr><td><!--Pravastatin--><span id=""></span></td><td><!--20mg--></td></tr>  
+	</table>
+ <img src="graphics/heart_liver.png" width='300'>
+ </td><!--end of last cell in top row-->
+ <td rowspan=2></td>
+</td></tr>
+<tr><td height=200><!--<img src="graphics/heart_liver.png" width='300' >--></td><td></td><td></td><td></td></tr>
+<tr><td valign="top">
+<table class="innertbl"><tr><th bgcolor="lightblue" colspan=2>Healthy Lifestyle</td></tr>
+
+
+<tr><td></td></td><td>MDST: 4.5</td></tr>
+<tr><td></td></td><td>PAVS 150</td></tr>
+<tr><td><span class="dynamicsparklinealchx"></span></td></td><td><span class="recent" id="recentalchx"></span></td></tr>
+<tr><td><span class="dynamicsparklinesmok"></span></td></td><td>Smoking: <span class="recent" id="recentsmok" align="middle"></span></td></tr>
+	<!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td></td><td></td></tr>
+
+</table><!--end of inner tbl -->
+</td><td width=100>.....</td><td  valign="top"><!--middle lower cell -->
+<table class="innertbl"><tr><th bgcolor="lightblue" >Obesity Management</th></tr>
+
+<tr><td><span class="dynamicsparklinewtlb"></span><!--</td><td>--><span class="recent" id="recentwtlb" align="middle"></span></td></tr>
+<tr><td><span class="dynamicsparklinewc"></span><!--</td><td>--><span class="recent" id="recentwc" align="middle"></span></td></tr>
+<tr><td><span class="dynamicsparklinebmi"></span><!--</td><td>--><span class="recent" id="recentbmi"></span></td></tr>
+<tr><td >EOSS:&nbsp;<a href="javascript:openWineoss('eossstaging3.html');">Details</a><table><tr><td bgcolor="green";  class=stageopacity>Normal</td><td class=stageopacity bgcolor="yellow" opacity= 0.6;>Borderline</td><td style="opacity:1.0;" bgcolor="orange">Intermediate</td><td bgcolor="red" class=stageopacity>Severe</td><td></td></tr></table><!--end of staging tbl -->
+
+	<!--medications -->
+	 <tr><th colspan=2 bgcolor="#d6f5f5">Medications</th></tr>
+	 <tr><td></td><td></td></tr>
+
+</table>
+<!--</td><td>-->
+<!--lower right cell -->
+<!--</table>-->
+...</td><td width=100></td><td valign="top">
+<table class="innertbl" ><tr><th bgcolor="lightblue" valign="top" colspan=2>PROMIS 29</td></tr>
+
+<tr><td><font color="red">Anxiety</font></td><td><font color="red">69</font> (23%)</td></tr>
+<tr><td><font color="red">Depression</font></td><td><font color="red">60</font> (50%)</td></tr>
+
+<tr><td><font color="red">Pain</font></td><td><font color="red">71</font> (5%)</td></tr>
+<tr><td>Sleep</td><td>56 (42%)</td></tr>
+<tr><td><font color="red">Fatigue</font></td><td><font color="red">69</font> (23%)</td></tr>
+<tr><td>Social</td><td>72  (84%)</td></tr>
+<tr><td><font color="red">Physical</font></td><td><font color="red">45</font> (12%)</td></tr>
+<tr><td></td><td></td></tr>
+</table>
+</td></tr></table><!--end of container table? -->
+<br><br>
+
+
+<a href="javascript:matchdrugs('choldruglist','cholstr','choldrugs','gemfibrozil')";>chol</a><br>
+<div id="choldrugs"></div>
+
+  </body>
+</div>
+</html>
+

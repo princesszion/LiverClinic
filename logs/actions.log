@@ -1,0 +1,46 @@
+2025-01-23 13:44:06,739 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-01-23 13:44:06,739 - INFO - [33mPress CTRL+C to quit[0m
+2025-01-23 13:44:15,217 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:15] "GET / HTTP/1.1" 200 -
+2025-01-23 13:44:15,370 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:15] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-01-23 13:44:15,370 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:15] "[36mGET /static/charts.js HTTP/1.1[0m" 304 -
+2025-01-23 13:44:15,411 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:15] "GET /data/alchx HTTP/1.1" 200 -
+2025-01-23 13:44:15,414 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:15] "GET /data/alchx HTTP/1.1" 200 -
+2025-01-23 13:44:21,834 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:21] "GET /?file=alchx.csv HTTP/1.1" 200 -
+2025-01-23 13:44:21,853 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:21] "[36mGET /static/charts.js HTTP/1.1[0m" 304 -
+2025-01-23 13:44:21,853 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:21] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-01-23 13:44:21,870 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:21] "GET /data/alchx HTTP/1.1" 200 -
+2025-01-23 13:44:21,881 - INFO - 127.0.0.1 - - [23/Jan/2025 13:44:21] "GET /data/alchx HTTP/1.1" 200 -
+2025-01-23 16:50:49,693 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-01-23 16:50:49,693 - INFO - [33mPress CTRL+C to quit[0m
+2025-01-23 16:51:02,772 - INFO - 127.0.0.1 - - [23/Jan/2025 16:51:02] "GET / HTTP/1.1" 200 -
+2025-01-23 16:51:02,885 - INFO - 127.0.0.1 - - [23/Jan/2025 16:51:02] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-01-23 16:51:33,972 - INFO - File alchx.csv uploaded and saved to uploads\alchx.csv.
+2025-01-23 16:51:34,035 - INFO - 127.0.0.1 - - [23/Jan/2025 16:51:34] "POST /upload HTTP/1.1" 200 -
+2025-01-23 16:52:10,440 - INFO - 127.0.0.1 - - [23/Jan/2025 16:52:10] "GET /tables HTTP/1.1" 200 -
+2025-01-23 16:52:42,413 - INFO - 127.0.0.1 - - [23/Jan/2025 16:52:42] "GET /dashboard HTTP/1.1" 200 -
+2025-01-23 16:52:42,497 - ERROR - Error fetching data for table sample_table: Execution failed on sql '
+            SELECT * FROM sample_table
+            WHERE date >= date('now', '-3 years')
+            ORDER BY date;
+        ': no such table: sample_table
+2025-01-23 16:52:42,497 - INFO - 127.0.0.1 - - [23/Jan/2025 16:52:42] "[35m[1mGET /data/sample_table HTTP/1.1[0m" 500 -
+2025-01-23 16:59:26,798 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-01-23 16:59:26,798 - INFO - [33mPress CTRL+C to quit[0m
+2025-01-23 16:59:37,098 - INFO - 127.0.0.1 - - [23/Jan/2025 16:59:37] "GET /dashboard HTTP/1.1" 200 -
+2025-01-23 16:59:37,129 - ERROR - Error fetching data for table sample_table: Execution failed on sql '
+            SELECT * FROM sample_table
+            WHERE date >= date('now', '-3 years')
+            ORDER BY date;
+        ': no such table: sample_table
+2025-01-23 16:59:37,129 - INFO - 127.0.0.1 - - [23/Jan/2025 16:59:37] "[35m[1mGET /data/sample_table HTTP/1.1[0m" 500 -
+2025-01-23 16:59:44,155 - INFO - 127.0.0.1 - - [23/Jan/2025 16:59:44] "[31m[1mGET /upload HTTP/1.1[0m" 405 -
+2025-01-23 16:59:49,334 - INFO - 127.0.0.1 - - [23/Jan/2025 16:59:49] "GET / HTTP/1.1" 200 -
+2025-01-23 16:59:56,180 - INFO - File alchx.csv uploaded and saved to uploads\alchx.csv.
+2025-01-23 16:59:56,211 - INFO - 127.0.0.1 - - [23/Jan/2025 16:59:56] "POST /upload HTTP/1.1" 200 -
+2025-01-23 17:00:13,856 - INFO - 127.0.0.1 - - [23/Jan/2025 17:00:13] "GET /tables HTTP/1.1" 200 -
+2025-01-23 17:00:36,047 - INFO - 127.0.0.1 - - [23/Jan/2025 17:00:36] "GET /?file=alchx.csv HTTP/1.1" 200 -
+2025-01-23 17:00:50,088 - INFO - File currmeds.csv uploaded and saved to uploads\currmeds.csv.
+2025-01-23 17:00:50,120 - INFO - 127.0.0.1 - - [23/Jan/2025 17:00:50] "POST /upload HTTP/1.1" 200 -

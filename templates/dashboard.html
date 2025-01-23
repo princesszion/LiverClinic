@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard | Health Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Dashboard</h1>
+    <canvas id="chart"></canvas>
+
+    <script>
+        fetch('/data/sample_table')  // Replace with a real table name
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(row => row.date);
+                const values = data.map(row => row.value); // Adjust for your data columns
+
+                new Chart(document.getElementById('chart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'Values', data: values }]
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
