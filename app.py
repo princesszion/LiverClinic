@@ -1,140 +1,141 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
-import sqlite3
+import mysql.connector
 import os
 import logging
 from datetime import datetime
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
-DB_PATH = "data/liver_clinic.db"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Set up logging
-logging.basicConfig(
-    filename="logs/actions.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+# MySQL Database Configuration
+MYSQL_CONFIG = {
+    "host": "localhost",
+    "user": "root",
+    "password": "",
+    "database": "test",
+}
 
-# Ensure upload and data folders exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs("data", exist_ok=True)
-os.makedirs("logs", exist_ok=True)
+def get_db_connection():
+    return mysql.connector.connect(**MYSQL_CONFIG)
 
-
-# Initialize the database (run once to set up)
 def initialize_db():
-    schema = """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         action TEXT,
         details TEXT
-    );
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.executescript(schema)
+    )
+    """)
     conn.commit()
     conn.close()
 
-
-# Helper function to create tables and insert data
-def create_table(table_name, data):
-    conn = sqlite3.connect(DB_PATH)
-    data.to_sql(table_name, conn, if_exists="replace", index=False)
-    conn.close()
-
-
-# Upload CSV File and Store in Database
 @app.route("/upload", methods=["POST"])
 def upload_file():
     if "file" not in request.files or request.files["file"].filename == "":
-        app.logger.warning("No file uploaded.")
         return jsonify({"error": "No file uploaded."}), 400
 
     file = request.files["file"]
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
     table_name = os.path.splitext(file.filename)[0]
 
     try:
         file.save(file_path)
-        app.logger.info(f"File {file.filename} uploaded and saved to {file_path}.")
-
         data = pd.read_csv(file_path)
-
         if "date" in data.columns:
             data["date"] = pd.to_datetime(data["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-            data = data.dropna(subset=["date"])
-
+            data.dropna(subset=["date"], inplace=True)
         create_table(table_name, data)
         return jsonify({"message": f"Data uploaded and stored in table {table_name}."})
-
     except Exception as e:
-        app.logger.error(f"Error processing file {file.filename}: {e}")
-        return jsonify({"error": "Error processing file."}), 500
+        return jsonify({"error": f"Error processing file: {e}"}), 500
 
+def create_table(table_name, data):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    columns = ", ".join([f"{col} TEXT" for col in data.columns])
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({columns})")
+    placeholders = ", ".join(["%s"] * len(data.columns))
+    for _, row in data.iterrows():
+        cursor.execute(f"INSERT INTO {table_name} ({', '.join(data.columns)}) VALUES ({placeholders})", tuple(row))
+    conn.commit()
+    conn.close()
 
-# List available tables
 @app.route("/tables", methods=["GET"])
 def list_tables():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        query = "SELECT name FROM sqlite_master WHERE type='table';"
-        tables = pd.read_sql_query(query, conn)
-        conn.close()
-        return jsonify(tables["name"].tolist())
-    except Exception as e:
-        app.logger.error(f"Error listing tables: {e}")
-        return jsonify({"error": "Failed to list tables."}), 500
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SHOW TABLES")
+    tables = [table[0] for table in cursor.fetchall()]
+    conn.close()
+    return jsonify(tables)
 
-
-# Fetch data for charts
 @app.route("/data/<table_name>", methods=["GET"])
 def get_data(table_name):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(f"SELECT * FROM {table_name}")
+    data = cursor.fetchall()
+    conn.close()
+    return jsonify(data) if data else jsonify({"error": "No data found."}), 404
+
+def get_patient_data(patient_id):
+    patient_data = {}
+
     try:
-        conn = sqlite3.connect(DB_PATH)
-        query = f"""
-            SELECT * FROM {table_name}
-            WHERE date >= date('now', '-3 years')
-            ORDER BY date;
-        """
-        data = pd.read_sql_query(query, conn)
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=False)  # Disable dictionary mode for SHOW TABLES
+        cursor.execute("SHOW TABLES")
+        tables = cursor.fetchall()
+
+        if not tables:
+            app.logger.error("No tables found in the database.")
+            return {"error": "No tables found in the database."}
+
+        tables = [table[0] for table in tables]  # Extract table names
+        app.logger.info(f"Tables found: {tables}")  # Log tables for debugging
+
+        cursor = conn.cursor(dictionary=True)  # Enable dictionary mode for other queries
+        
+        for table_name in tables:
+            cursor.execute(f"DESCRIBE {table_name}")
+            columns = [col["Field"] for col in cursor.fetchall()]  # Fetch field names
+            
+            if "PAT_MRN_ID" in columns:
+                cursor.execute(f"SELECT * FROM {table_name} WHERE PAT_MRN_ID = %s", (patient_id,))
+                records = cursor.fetchall()
+                
+                if records:
+                    patient_data[table_name] = records
+
         conn.close()
-        return jsonify(data.to_dict(orient="records"))
+        return patient_data
+
+    except mysql.connector.Error as e:
+        app.logger.error(f"MySQL error: {e}")
+        return {"error": "Database error occurred."}
+    
     except Exception as e:
-        app.logger.error(f"Error fetching data for table {table_name}: {e}")
-        return jsonify({"error": "Failed to fetch data."}), 500
+        app.logger.error(f"Error fetching patient data: {e}")
+        return {"error": "Unexpected error occurred."}
 
 
-# Log user actions
-@app.route("/log", methods=["POST"])
-def log_action():
-    try:
-        action = request.json.get("action")
-        details = request.json.get("details", "")
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO user_logs (action, details) VALUES (?, ?)", (action, details))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Action logged successfully."})
-    except Exception as e:
-        app.logger.error(f"Error logging action: {e}")
-        return jsonify({"error": "Failed to log action."}), 500
+@app.route("/patient/<patient_id>", methods=["GET"])
+def get_patient_data(patient_id):
+    patient_data = get_patient_data(patient_id)
+    return jsonify(patient_data)
 
-
-# Home Page
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("dashboard.html")
 
-
-# Dashboard Page
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
-
 
 if __name__ == "__main__":
     initialize_db()
